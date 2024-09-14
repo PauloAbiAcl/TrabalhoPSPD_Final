@@ -18,4 +18,5 @@ RUN pip install -r requirements.txt
 
 EXPOSE 7071
 
-CMD ["python3", "-u", "jogoVidaSpark.py"]
+# Manter o container em execução indefinidamente
+CMD ["tail", "-f", "/dev/null"]

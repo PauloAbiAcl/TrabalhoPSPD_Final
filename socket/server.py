@@ -1,9 +1,25 @@
 import socket
 import threading
+import subprocess
 
 SERVER_IP = "127.0.0.1"
 SERVER_PORT = 8080
 BUFFER_SIZE = 1024
+
+def enviar_para_docker(engine_name, powmin, powmax):
+    # mpirun --allow-run-as-root -np 2 ./jogoVidaMPI
+    # Aqui, vamos usar o comando 'docker exec' para enviar variáveis ao container correto
+    try:
+        if(engine_name == 'mpi_engine'):
+            comando = f"docker exec {engine_name} /bin/sh -c 'mpirun --allow-run-as-root -np 2 ./jogoVidaMPI {powmin} {powmax}'"
+        elif(engine_name == 'c_engine'):
+            comando = f"docker exec {engine_name} /bin/sh -c './jogoVida {powmin} {powmax}'"
+        elif(engine_name == 'spark_engine'):
+            comando = f"docker exec {engine_name} /bin/sh -c 'python3 jogoVidaSpark.py {powmin} {powmax}'"
+        subprocess.run(comando, shell=True, check=True)
+        print(f"Parâmetros enviados para {engine_name}: POWMIN={powmin}, POWMAX={powmax}")
+    except subprocess.CalledProcessError as e:
+        print(f"Erro ao enviar para a engine {engine_name}: {e}")
 
 def handle_client(client_socket, address):
     print(f"Novo cliente conectado, IP: {address[0]}, Porta: {address[1]}")
@@ -19,14 +35,14 @@ def handle_client(client_socket, address):
             
             if message.startswith('<') and message.endswith('>'):
                 message = message[1:-1]  # Remove < e >
-                num1, num2 = map(int, message.split(','))
+                powmin, powmax = map(int, message.split(','))
                 
-                print(f"Cliente {address[0]}:{address[1]} enviou: num1={num1}, num2={num2}")
+                print(f"Cliente {address[0]}:{address[1]} enviou: POWMIN={powmin}, POWMAX={powmax}")
                 
-                sum_result = num1 + num2
-
-                response = f"Soma: {sum_result}"
-                client_socket.send(response.encode())
+                # Envia para as diferentes engines
+                enviar_para_docker('mpi_engine', powmin, powmax)
+                # enviar_para_docker('c_engine', powmin, powmax)
+                enviar_para_docker('spark_engine', powmin, powmax)
             
             else:
                 print("Formato da mensagem inválido.")

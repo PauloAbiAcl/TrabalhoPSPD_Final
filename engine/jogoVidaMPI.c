@@ -4,8 +4,6 @@
 #include <mpi.h>
 
 #define ind2d(i, j) ((i) * (tam + 2) + (j))
-#define POWMIN 3
-#define POWMAX 10
 
 double wall_time(void) {
     struct timeval tv;
@@ -96,6 +94,14 @@ int main(int argc, char *argv[]) {
         MPI_Finalize();
         return 1;
     }
+
+    if (argc < 3) {
+        printf("Uso: %s POWMIN POWMAX\n", argv[0]);
+        return 1;
+    }
+
+    int POWMIN = atoi(argv[1]);
+    int POWMAX = atoi(argv[2]);
 
     // Para todos os tamanhos do tabuleiro
     for (pow = POWMIN; pow <= POWMAX; pow++) {

@@ -18,5 +18,8 @@ RUN mpicc -o jogoVidaMPI jogoVidaMPI.c
 ENV OMPI_ALLOW_RUN_AS_ROOT=1
 ENV OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
-# Definir o comando de entrada padrão como `mpirun` com a opção de permitir execução como root
-CMD ["mpirun", "--allow-run-as-root", "-np", "2", "./jogoVidaMPI"]
+# Expor uma porta para comunicação (se necessário)
+EXPOSE 8080
+
+# Manter o container em execução indefinidamente
+CMD ["tail", "-f", "/dev/null"]

@@ -6,12 +6,16 @@ services:
       context: ./engine
       dockerfile: Dockerfile
     container_name: mpi_engine
+    ports:
+      - "7072:8080"
 
-  c_engine:
-    build:
-      context: ./enginec
-      dockerfile: Dockerfile
-    container_name: c_engine
+  # c_engine:
+  #   build:
+  #     context: ./engineC
+  #     dockerfile: Dockerfile
+  #   container_name: c_engine
+  #   ports:
+  #     - "7073:8080"
 
   spark_engine:
     build:

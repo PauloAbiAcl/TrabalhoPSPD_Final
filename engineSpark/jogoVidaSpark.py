@@ -3,6 +3,7 @@ import uuid
 import re
 import time
 from datetime import datetime
+import sys
 
 def extrairNumeros(texto):
     padrao = r'<(\d+),(\d+)>'
@@ -82,12 +83,31 @@ def jogoVida(potencia):
     json = {"status": 1 if Correto(tabulIn, tam) else 0, "mode": "Spark", "time": delta_tempo.total_seconds(), "potency": potencia}
     print("ENVIANDO=", json)
 
-if __name__ == "__main__":
+def main():
+    if len(sys.argv) != 3:
+        print("Uso: python3 jogodavida.py <num1> <num2>")
+        sys.exit(1)
+
+    try:
+        num1 = int(sys.argv[1])
+        num2 = int(sys.argv[2])
+    except ValueError:
+        print("Por favor, forneça dois números inteiros.")
+        sys.exit(1)
+
+
     spark = SparkSession.builder.master("local[6]").appName("GameOfLife").getOrCreate()
-    potencia_min = 3
-    potencia_max = 8
-    for potencia in range(potencia_min, potencia_max + 1):
-        a = list(range(potencia_min, potencia_max + 1))
-        a_rdd = spark.sparkContext.parallelize(a)
-        a_rdd.foreach(lambda x: jogoVida(x))
+    
+    # Definir a faixa de potências
+    potencias = list(range(num1, num2 + 1))
+
+    # Criar RDD e garantir apenas 1 partição para cada execução
+    potenciasrdd = spark.sparkContext.parallelize(potencias, len(potencias))  # Uma partição por potência
+
+    # Use map em vez de foreach para evitar múltiplas execuções
+    potenciasrdd.map(lambda x: jogoVida(x)).collect()
     spark.stop()
+
+
+if __name__ == "__main__":
+    main()

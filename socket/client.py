@@ -1,30 +1,23 @@
 import socket
 
-SERVER_IP = "127.0.0.1"
-SERVER_PORT = 8080
-BUFFER_SIZE = 1024
+def send_to_server(server_ip, server_port, message):
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        client_socket.connect((server_ip, server_port))
+        client_socket.sendall(message.encode('utf-8'))
+        # response = client_socket.recv(1024).decode('utf-8')
+        # print(f"Resposta do servidor {server_ip}:{server_port} -> {response}")
+    except Exception as e:
+        print(f"Erro: {e}")
+    finally:
+        client_socket.close()
 
 def main():
-    # Cria o socket do cliente
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    
-    try:
-        # Conecta ao servidor
-        client_socket.connect((SERVER_IP, SERVER_PORT))
-        print(f"Conectado ao servidor em {SERVER_IP}:{SERVER_PORT}")
+    while True:
+        message = input("Digite a mensagem no formato <num1,num2>: ")
 
-        while True:
-            message = input("Digite a mensagem no formato <num1,num2>: ")
-
-            # Envia a mensagem para o servidor
-            client_socket.sendall(message.encode('utf-8'))
-            
-    except KeyboardInterrupt:
-        print("\nEncerrando o cliente.")
-    
-    finally:
-        # Fecha o socket do cliente
-        client_socket.close()
+        # Envia a mensagem para o server.py que está escutando na porta 8080
+        send_to_server("127.0.0.1", 8080, message)  # O server.py está escutando na porta 8080
 
 if __name__ == "__main__":
     main()
