@@ -84,6 +84,8 @@ int main(void) {
 
   // para todos os tamanhos do tabuleiro
 
+  printf("-------------------------------------Código Puro-----------------------------------------");
+
   for (pow=POWMIN; pow<=POWMAX; pow++) {
     tam = 1 << pow;
     // aloca e inicializa tabuleiros

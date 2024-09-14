@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  mpi_engine:
+    build:
+      context: ./engine
+      dockerfile: Dockerfile  # Certifique-se de que o nome do Dockerfile está correto
+    container_name: mpi_engine
+
+  c_engine:
+    build:
+      context: ./enginec
+      dockerfile: Dockerfile  # Certifique-se de que o nome do Dockerfile está correto
+    container_name: c_engine
+
