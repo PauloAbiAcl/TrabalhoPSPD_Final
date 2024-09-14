@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  mpi_engine:
+    build:
+      context: ./engine
+      dockerfile: Dockerfile
+    container_name: mpi_engine
+
+  c_engine:
+    build:
+      context: ./enginec
+      dockerfile: Dockerfile
+    container_name: c_engine
+
+  spark_engine:
+    build:
+      context: ./engineSpark
+      dockerfile: Dockerfile
+    container_name: spark_engine
+    ports:
+      - "7071:7071"
