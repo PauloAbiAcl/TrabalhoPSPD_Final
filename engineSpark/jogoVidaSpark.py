@@ -1,7 +1,7 @@
 from pyspark.sql import SparkSession
-import requests
 import uuid
 import re
+import time
 from datetime import datetime
 
 def extrairNumeros(texto):
@@ -20,14 +20,18 @@ def matrix(m, n):
 
 def Correto(tabul, tam):
     cnt = 0
-    for i in range(tam+2):
-        for j in range(tam+2):
+    for i in range(tam + 2):
+        for j in range(tam + 2):
             cnt += tabul[i][j]
-    return cnt == 5 and tabul[tam-2][tam-1] and tabul[tam-1][tam] and tabul[tam][tam-2] and tabul[tam][tam-1] and tabul[tam][tam]
+    return cnt == 5 and tabul[tam - 2][tam - 1] and \
+           tabul[tam - 1][tam] and \
+           tabul[tam][tam - 2] and \
+           tabul[tam][tam - 1] and \
+           tabul[tam][tam]
 
 def InitTabul(tam):
-    tabulIn = matrix(tam+2, tam+2)
-    tabulOut = matrix(tam+2, tam+2)
+    tabulIn = matrix(tam + 2, tam + 2)
+    tabulOut = matrix(tam + 2, tam + 2)
     tabulIn[1][2] = 1
     tabulIn[2][3] = 1
     tabulIn[3][1] = 1
@@ -35,10 +39,24 @@ def InitTabul(tam):
     tabulIn[3][3] = 1
     return tabulIn, tabulOut
 
+def DumpTabul(tabul, tam, first, last, msg):
+    for i in range(first, last + 1):
+        print("=", end="")
+    print()
+    for i in range(first, last + 1):
+        for j in range(first, last + 1):
+            print('X' if tabul[i][j] == 1 else '.', end='')
+        print('|')
+    for i in range(first, last + 1):
+        print("=", end="")
+    print()
+
 def UmaVida(tabulIn, tabulOut, tam):
-    for i in range(1, tam+1):
-        for j in range(1, tam+1):
-            vizviv = tabulIn[i-1][j-1] + tabulIn[i-1][j] + tabulIn[i-1][j+1] + tabulIn[i][j-1] + tabulIn[i][j+1] + tabulIn[i+1][j-1] + tabulIn[i+1][j] + tabulIn[i+1][j+1]
+    for i in range(1, tam + 1):
+        for j in range(1, tam + 1):
+            vizviv = tabulIn[i - 1][j - 1] + tabulIn[i - 1][j] + tabulIn[i - 1][j + 1] + \
+                     tabulIn[i][j - 1] + tabulIn[i][j + 1] + \
+                     tabulIn[i + 1][j - 1] + tabulIn[i + 1][j] + tabulIn[i + 1][j + 1]
             if tabulIn[i][j] and vizviv < 2:
                 tabulOut[i][j] = 0
             elif tabulIn[i][j] and vizviv > 3:
@@ -51,33 +69,25 @@ def UmaVida(tabulIn, tabulOut, tam):
 def jogoVida(potencia):
     tam = 1 << potencia
     tabulIn, tabulOut = InitTabul(tam)
-    
-    t_init = datetime.now()
-    UmaVida(tabulIn, tabulOut, tam)
-    t_comp = datetime.now()
-    UmaVida(tabulOut, tabulIn, tam)
-    t_fim = datetime.now()
-    
-    delta_init = t_comp - t_init
-    delta_comp = t_fim - t_comp
-    delta_fim = t_fim - t_comp  # Corrigido: delta_fim deve ser a diferença após o segundo UmaVida
-    delta_total = delta_init + delta_comp + delta_fim
-
-    resultado = "CORRETO" if Correto(tabulIn, tam) else "ERRADO"
-    
-    print(f"mpi_engine  | **RESULTADO {resultado}**")
-    print(f"mpi_engine  | tam={tam}; tempos: init={delta_init.total_seconds():.7f}, comp={delta_comp.total_seconds():.7f}, fim={delta_fim.total_seconds():.7f}, tot={delta_total.total_seconds():.7f}")
-    print("mpi_engine  |", 1 if resultado == "CORRETO" else 0)
-
-    guid = str(uuid.uuid4())
-    json = {"status": 1 if resultado == "CORRETO" else 0, "mode": "Spark", "time": delta_total.total_seconds(), "potency": potencia}
-
-def main():
-    potencias = list(range(3, 11))  # Potências de 3 a 10
-    spark = SparkSession.builder.master("local[6]").appName("MyProgram").getOrCreate()
-    rdd = spark.sparkContext.parallelize(potencias)
-    rdd.foreach(lambda x: jogoVida(x))
-    spark.stop()
+    t1 = datetime.now()
+    for _ in range(2 * (tam - 3)):
+        UmaVida(tabulIn, tabulOut, tam)
+        UmaVida(tabulOut, tabulIn, tam)
+    t2 = datetime.now()
+    delta_tempo = t2 - t1
+    if Correto(tabulIn, tam):
+        print(f"*Ok, RESULTADO CORRETO* - Potência: {potencia}")
+    else:
+        print(f"**Not Ok, RESULTADO ERRADO** - Potência: {potencia}")
+    json = {"status": 1 if Correto(tabulIn, tam) else 0, "mode": "Spark", "time": delta_tempo.total_seconds(), "potency": potencia}
+    print("ENVIANDO=", json)
 
 if __name__ == "__main__":
-    main()
+    spark = SparkSession.builder.master("local[6]").appName("GameOfLife").getOrCreate()
+    potencia_min = 3
+    potencia_max = 8
+    for potencia in range(potencia_min, potencia_max + 1):
+        a = list(range(potencia_min, potencia_max + 1))
+        a_rdd = spark.sparkContext.parallelize(a)
+        a_rdd.foreach(lambda x: jogoVida(x))
+    spark.stop()

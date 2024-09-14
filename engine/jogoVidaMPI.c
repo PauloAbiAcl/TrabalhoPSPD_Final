@@ -15,36 +15,15 @@ double wall_time(void) {
     return (tv.tv_sec + tv.tv_usec / 1000000.0);
 }
 
-void AtualizarBordas(int *tabulIn, int tam, int rank, int world_size) {
-    MPI_Status status;
-    int tam_por_processo = tam / world_size;
-    
-    // Envio e recebimento da linha superior
-    if (rank > 0) {
-        MPI_Sendrecv(&tabulIn[ind2d(1, 0)], tam + 2, MPI_INT, rank - 1, 0,
-                     &tabulIn[ind2d(0, 0)], tam + 2, MPI_INT, rank - 1, 0,
-                     MPI_COMM_WORLD, &status);
-    }
-
-    // Envio e recebimento da linha inferior
-    if (rank < world_size - 1) {
-        MPI_Sendrecv(&tabulIn[ind2d(tam, 0)], tam + 2, MPI_INT, rank + 1, 0,
-                     &tabulIn[ind2d(tam + 1, 0)], tam + 2, MPI_INT, rank + 1, 0,
-                     MPI_COMM_WORLD, &status);
-    }
-}
-
-void UmaVida(int *tabulIn, int *tabulOut, int tam, int rank, int world_size) {
+void UmaVida(int *tabulIn, int *tabulOut, int tam)
+{
     int i, j, vizviv;
-    int tam_por_processo = tam / world_size;
-    int first = (rank == 0) ? 1 : (rank * tam_por_processo + 1);
-    int last = (rank == world_size - 1) ? tam : ((rank + 1) * tam_por_processo);
-
-    AtualizarBordas(tabulIn, tam, rank, world_size);
 
     #pragma omp parallel for private(i, j, vizviv) shared(tabulIn, tabulOut)
-    for (i = first; i <= last; i++) {
-        for (j = 1; j <= tam; j++) {
+    for (i = 1; i <= tam; i++)
+    {
+        for (j = 1; j <= tam; j++)
+        {
             vizviv = tabulIn[ind2d(i - 1, j - 1)] + tabulIn[ind2d(i - 1, j)] +
                      tabulIn[ind2d(i - 1, j + 1)] + tabulIn[ind2d(i, j - 1)] +
                      tabulIn[ind2d(i, j + 1)] + tabulIn[ind2d(i + 1, j - 1)] +
@@ -57,9 +36,9 @@ void UmaVida(int *tabulIn, int *tabulOut, int tam, int rank, int world_size) {
                 tabulOut[ind2d(i, j)] = 1;
             else
                 tabulOut[ind2d(i, j)] = tabulIn[ind2d(i, j)];
-        }
-    }
-}
+        } /* fim-for */
+    } /* fim-for */
+} /* fim-UmaVida */
 
 void DumpTabul(int *tabul, int tam, int first, int last, char *msg) {
     int i, ij;
@@ -136,8 +115,8 @@ int main(int argc, char *argv[]) {
 
         // Executa as iterações do jogo da vida
         for (i = 0; i < 2 * (tam - 3); i++) {
-            UmaVida(tabulIn, tabulOut, tam, rank, world_size);
-            UmaVida(tabulOut, tabulIn, tam, rank, world_size);
+            UmaVida(tabulIn, tabulOut, tam);
+            UmaVida(tabulOut, tabulIn, tam);
         }
 
         // Sincroniza os processos para garantir que ambos terminaram a computação
