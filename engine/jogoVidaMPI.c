@@ -5,6 +5,22 @@
 
 #define ind2d(i, j) ((i) * (tam + 2) + (j))
 
+void enviar_dados_para_elasticsearch(const char* engine_name, int tam, double tempo_init, double tempo_comp, double tempo_fim, double tempo_total) {
+    char curl_cmd[1024];
+    const char* elasticsearch_url = "http://elasticsearch:9200/tempo_mpi_engine/_doc/";
+
+    char payload[512];
+    snprintf(payload, sizeof(payload),
+             "{\"engine_name\": \"%s\", \"tamanho\": %d, \"tempo_init\": %.7f, \"tempo_comp\": %.7f, \"tempo_fim\": %.7f, \"tempo_total\": %.7f}",
+             engine_name, tam, tempo_init, tempo_comp, tempo_fim, tempo_total);
+
+    snprintf(curl_cmd, sizeof(curl_cmd),
+             "curl -X POST %s -H \"Content-Type: application/json\" -d '%s'",
+             elasticsearch_url, payload);
+
+    system(curl_cmd);
+}
+
 double wall_time(void) {
     struct timeval tv;
     struct timezone tz;
@@ -147,6 +163,7 @@ int main(int argc, char *argv[]) {
         if (rank == 0) {
             printf("tam=%d; tempos: init=%7.7f, comp=%7.7f, fim=%7.7f, tot=%7.7f \n",
                    tam, t1 - t0, t2 - t1, t3 - t2, t3 - t0);
+            enviar_dados_para_elasticsearch("mpi_engine", tam, t1 - t0, t2 - t1, t3 - t2, t3 - t0);
         }
 
         free(tabulIn);

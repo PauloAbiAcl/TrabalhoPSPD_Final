@@ -42,7 +42,7 @@ def handle_client(client_socket, address):
                 # Envia para as diferentes engines
                 enviar_para_docker('mpi_engine', powmin, powmax)
                 # enviar_para_docker('c_engine', powmin, powmax)
-                enviar_para_docker('spark_engine', powmin, powmax)
+                # enviar_para_docker('spark_engine', powmin, powmax)
             
             else:
                 print("Formato da mensagem inválido.")

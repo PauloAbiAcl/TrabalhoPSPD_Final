@@ -24,3 +24,27 @@ services:
     container_name: spark_engine
     ports:
       - "7071:7071"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.9.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false  # Desativa a autenticação para facilitar o uso local
+    ports:
+      - "9200:9200"  # Mapeia a porta 9200 para acesso externo
+      - "9300:9300"  # Porta de comunicação interna entre nós, caso use mais de um
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.9.0
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+
+volumes:
+  esdata:  # Definição do volume para persistência de dados
+    driver: local

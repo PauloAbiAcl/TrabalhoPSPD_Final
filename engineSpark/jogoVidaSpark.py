@@ -98,13 +98,10 @@ def main():
 
     spark = SparkSession.builder.master("local[6]").appName("GameOfLife").getOrCreate()
     
-    # Definir a faixa de potências
     potencias = list(range(num1, num2 + 1))
 
-    # Criar RDD e garantir apenas 1 partição para cada execução
-    potenciasrdd = spark.sparkContext.parallelize(potencias, len(potencias))  # Uma partição por potência
+    potenciasrdd = spark.sparkContext.parallelize(potencias, len(potencias))
 
-    # Use map em vez de foreach para evitar múltiplas execuções
     potenciasrdd.map(lambda x: jogoVida(x)).collect()
     spark.stop()
 

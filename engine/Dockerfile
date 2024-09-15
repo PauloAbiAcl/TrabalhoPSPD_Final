@@ -2,7 +2,7 @@ FROM ubuntu:latest
 
 # Instalar dependências e o OpenMPI
 RUN apt-get update && \
-    apt-get install -y build-essential openmpi-bin openmpi-common libopenmpi-dev && \
+    apt-get install -y build-essential openmpi-bin openmpi-common libopenmpi-dev curl && \
     apt-get clean
 
 # Copiar o código MPI para o container
