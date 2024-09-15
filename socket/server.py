@@ -40,9 +40,9 @@ def handle_client(client_socket, address):
                 print(f"Cliente {address[0]}:{address[1]} enviou: POWMIN={powmin}, POWMAX={powmax}")
                 
                 # Envia para as diferentes engines
-                enviar_para_docker('mpi_engine', powmin, powmax)
+                # enviar_para_docker('mpi_engine', powmin, powmax)
                 # enviar_para_docker('c_engine', powmin, powmax)
-                # enviar_para_docker('spark_engine', powmin, powmax)
+                enviar_para_docker('spark_engine', powmin, powmax)
             
             else:
                 print("Formato da mensagem inválido.")

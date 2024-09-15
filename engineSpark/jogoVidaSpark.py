@@ -4,6 +4,18 @@ import re
 import time
 from datetime import datetime
 import sys
+import requests
+import json
+
+# Função para enviar dados para o Elasticsearch
+def enviar_dados_para_elasticsearch(data):
+    url = f'http://elasticsearch:9200/tempo_spark_engine/_doc/'
+    headers = {'Content-Type': 'application/json'}
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+    if response.status_code == 201:
+        print("Dados enviados com sucesso para o Elasticsearch.")
+    else:
+        print(f"Erro ao enviar dados: {response.status_code} - {response.text}")
 
 def extrairNumeros(texto):
     padrao = r'<(\d+),(\d+)>'
@@ -80,8 +92,14 @@ def jogoVida(potencia):
         print(f"*Ok, RESULTADO CORRETO* - Potência: {potencia}")
     else:
         print(f"**Not Ok, RESULTADO ERRADO** - Potência: {potencia}")
-    json = {"status": 1 if Correto(tabulIn, tam) else 0, "mode": "Spark", "time": delta_tempo.total_seconds(), "potency": potencia}
-    print("ENVIANDO=", json)
+    # json = {"status": 1 if Correto(tabulIn, tam) else 0, "mode": "Spark", "time": delta_tempo.total_seconds(), "potency": potencia}
+    # print("ENVIANDO=", json)
+    json = {
+        "time": delta_tempo.total_seconds(),
+        "tamanho": tam,
+        "engine_name": "spark_engine"
+    }
+    enviar_dados_para_elasticsearch(json)
 
 def main():
     if len(sys.argv) != 3:
@@ -95,7 +113,6 @@ def main():
         print("Por favor, forneça dois números inteiros.")
         sys.exit(1)
 
-
     spark = SparkSession.builder.master("local[6]").appName("GameOfLife").getOrCreate()
     
     potencias = list(range(num1, num2 + 1))
@@ -104,7 +121,6 @@ def main():
 
     potenciasrdd.map(lambda x: jogoVida(x)).collect()
     spark.stop()
-
 
 if __name__ == "__main__":
     main()
