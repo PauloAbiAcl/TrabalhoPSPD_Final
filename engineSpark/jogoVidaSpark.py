@@ -6,12 +6,13 @@ from datetime import datetime
 import sys
 import requests
 import json
+from datetime import datetime
 
 # Função para enviar dados para o Elasticsearch
 def enviar_dados_para_elasticsearch(data):
     url = f'http://elasticsearch:9200/tempo_spark_engine/_doc/'
     headers = {'Content-Type': 'application/json'}
-    response = requests.post(url, headers=headers, data=json.dumps(data))
+    response = requests.post(url, headers=headers, json=data)
     if response.status_code == 201:
         print("Dados enviados com sucesso para o Elasticsearch.")
     else:
@@ -97,7 +98,8 @@ def jogoVida(potencia):
     json = {
         "time": delta_tempo.total_seconds(),
         "tamanho": tam,
-        "engine_name": "spark_engine"
+        "engine_name": "spark_engine",
+        "timestamp": datetime.now().isoformat() 
     }
     enviar_dados_para_elasticsearch(json)
 
