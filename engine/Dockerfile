@@ -12,7 +12,7 @@ COPY jogoVidaMPI.c /usr/src/app/
 WORKDIR /usr/src/app/
 
 # Compilar o código MPI
-RUN mpicc -o jogoVidaMPI jogoVidaMPI.c
+RUN mpicc -o jogoVidaMPI jogoVidaMPI.c -fopenmp
 
 # Definir variáveis de ambiente para permitir execução como root
 ENV OMPI_ALLOW_RUN_AS_ROOT=1

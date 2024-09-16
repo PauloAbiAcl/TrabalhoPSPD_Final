@@ -25,12 +25,12 @@ def enviar_dados_para_elasticsearch(num_clientes):
 
 def enviar_para_docker(engine_name, powmin, powmax):
     try:
-        if(engine_name == 'mpi_engine'):
-            comando = f"docker exec {engine_name} /bin/sh -c 'mpirun --allow-run-as-root -np 2 ./jogoVidaMPI {powmin} {powmax}'"
+        if engine_name == 'mpi_engine':
+            comando = f'docker exec {engine_name} /bin/sh -c "mpirun --allow-run-as-root -np 2 ./jogoVidaMPI {powmin} {powmax}"'
         elif(engine_name == 'c_engine'):
-            comando = f"docker exec {engine_name} /bin/sh -c './jogoVida {powmin} {powmax}'"
+            comando = f'docker exec {engine_name} /bin/sh -c "./jogoVida {powmin} {powmax}"'
         elif(engine_name == 'spark_engine'):
-            comando = f"docker exec {engine_name} /bin/sh -c 'python3 jogoVidaSpark.py {powmin} {powmax}'"
+            comando = f'docker exec {engine_name} /bin/sh -c "python3 jogoVidaSpark.py {powmin} {powmax}"'
         subprocess.run(comando, shell=True, check=True)
         print(f"Parâmetros enviados para {engine_name}: POWMIN={powmin}, POWMAX={powmax}")
     except subprocess.CalledProcessError as e:
