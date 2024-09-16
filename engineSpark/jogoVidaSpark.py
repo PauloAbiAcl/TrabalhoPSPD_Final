@@ -90,9 +90,9 @@ def jogoVida(potencia):
     t2 = datetime.now()
     delta_tempo = t2 - t1
     if Correto(tabulIn, tam):
-        print(f"*Ok, RESULTADO CORRETO* - Potência: {potencia}")
+        print(f"*Ok, RESULTADO CORRETO* - Tamanho: {tam}")
     else:
-        print(f"**Not Ok, RESULTADO ERRADO** - Potência: {potencia}")
+        print(f"**Not Ok, RESULTADO ERRADO** - Tamanho: {tam}")
     # json = {"status": 1 if Correto(tabulIn, tam) else 0, "mode": "Spark", "time": delta_tempo.total_seconds(), "potency": potencia}
     # print("ENVIANDO=", json)
     json = {
@@ -109,15 +109,17 @@ def main():
         sys.exit(1)
 
     try:
-        num1 = int(sys.argv[1])
-        num2 = int(sys.argv[2])
+        powmin = int(sys.argv[1])
+        powmax = int(sys.argv[2])
+        if powmin < 0 or powmax < 0 or powmin > powmax:
+            raise ValueError
     except ValueError:
-        print("Por favor, forneça dois números inteiros.")
+        print("Por favor, forneça dois números inteiros, sendo o Primeiro maior que 0 e menor que o segundo.")
         sys.exit(1)
 
     spark = SparkSession.builder.master("local[6]").appName("GameOfLife").getOrCreate()
     
-    potencias = list(range(num1, num2 + 1))
+    potencias = list(range(powmin, powmax + 1))
 
     potenciasrdd = spark.sparkContext.parallelize(potencias, len(potencias))
 

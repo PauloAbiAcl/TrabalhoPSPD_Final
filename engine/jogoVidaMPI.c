@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <omp.h>
+#include <time.h>
 
 #define ind2d(i, j) ((i) * (tam + 2) + (j))
 
@@ -9,10 +10,16 @@ void enviar_dados_para_elasticsearch(const char* engine_name, int tam, double te
     char curl_cmd[1024];
     const char* elasticsearch_url = "http://elasticsearch:9200/tempo_mpi_engine/_doc/";
 
+    // Obter o timestamp atual no formato ISO 8601
+    time_t now = time(NULL);
+    struct tm *t = gmtime(&now);
+    char timestamp[64];
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%dT%H:%M:%SZ", t);
+
     char payload[512];
     snprintf(payload, sizeof(payload),
-             "{\"engine_name\": \"%s\", \"tamanho\": %d, \"tempo_init\": %.7f, \"tempo_comp\": %.7f, \"tempo_fim\": %.7f, \"tempo_total\": %.7f}",
-             engine_name, tam, tempo_init, tempo_comp, tempo_fim, tempo_total);
+             "{\"engine_name\": \"%s\", \"tamanho\": %d, \"tempo_init\": %.7f, \"tempo_comp\": %.7f, \"tempo_fim\": %.7f, \"tempo_total\": %.7f, \"timestamp\": \"%s\"}",
+             engine_name, tam, tempo_init, tempo_comp, tempo_fim, tempo_total, timestamp);
 
     snprintf(curl_cmd, sizeof(curl_cmd),
              "curl -X POST %s -H \"Content-Type: application/json\" -d '%s'",
