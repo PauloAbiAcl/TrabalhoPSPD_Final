@@ -1,0 +1,199 @@
+# MPI Engine Deployment
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mpi-engine-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mpi-engine
+  template:
+    metadata:
+      labels:
+        app: mpi-engine
+    spec:
+      containers:
+      - name: mpi-engine-container
+        image: docker.io/erickmvdo/mpi_engine:latest
+        ports:
+        - containerPort: 8081
+---
+# Spark Engine Deployment
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spark-engine-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spark-engine
+  template:
+    metadata:
+      labels:
+        app: spark-engine
+    spec:
+      containers:
+      - name: spark-engine-container
+        image: docker.io/erickmvdo/spark_engine:latest
+        ports:
+        - containerPort: 7071
+---
+# Server Engine Deployment
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: server
+  template:
+    metadata:
+      labels:
+        app: server
+    spec:
+      containers:
+      - name: server
+        image: docker.io/erickmvdo/server:latest
+        ports:
+        - containerPort: 8080
+---
+# Elasticsearch Deployment
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+      - name: elasticsearch-container
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.9.0
+        ports:
+        - containerPort: 9200
+        - containerPort: 9300
+        env:
+        - name: discovery.type
+          value: "single-node"
+        - name: ES_JAVA_OPTS
+          value: "-Xmx512m -Xms512m"
+        - name: xpack.security.enabled
+          value: "false"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+      - name: kibana-container
+        image: docker.elastic.co/kibana/kibana:8.9.0
+        ports:
+        - containerPort: 5601
+        env:
+        - name: ELASTICSEARCH_HOSTS
+          value: "http://elasticsearch-service:9200"
+        - name: SERVER_NAME
+          value: "kibana"
+        - name: xpack.security.enabled
+          value: "false"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mpi-engine-service
+spec:
+  selector:
+    app: mpi-engine
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 8081
+  type: NodePort
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-service
+spec:
+  selector:
+    app: elasticsearch
+  ports:
+    - name: http
+      protocol: TCP
+      port: 9200
+      targetPort: 9200
+    - name: transport
+      protocol: TCP
+      port: 9300
+      targetPort: 9300
+  type: NodePort
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: server-service
+spec:
+  selector:
+    app: server
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: NodePort
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spark-engine-service
+spec:
+  selector:
+    app: spark-engine
+  ports:
+    - protocol: TCP
+      port: 7071
+      targetPort: 7071
+  type: NodePort
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana-service
+spec:
+  selector:
+    app: kibana
+  ports:
+    - protocol: TCP
+      port: 5601
+      targetPort: 5601
+  type: NodePort
+
