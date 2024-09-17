@@ -5,13 +5,13 @@ import requests
 import json
 from datetime import datetime
 
-SERVER_IP = "127.0.0.1"
+SERVER_IP = "0.0.0.0"
 SERVER_PORT = 8080
 BUFFER_SIZE = 1024
 
 # Função para enviar dados para o Elasticsearch
 def enviar_dados_para_elasticsearch(num_clientes):
-    url = f'http://localhost:9200/num_clientes/_doc/'
+    url = f'http://elasticsearch-service:9200/num_clientes/_doc/'
     headers = {'Content-Type': 'application/json'}
     data = {
         "num_clientes": num_clientes,
@@ -23,18 +23,29 @@ def enviar_dados_para_elasticsearch(num_clientes):
     else:
         print(f"Erro ao enviar dados: {response.status_code} - {response.text}")
 
-def enviar_para_docker(engine_name, powmin, powmax):
+def executar_comando_no_pod(pod_name, command):
     try:
-        if(engine_name == 'mpi_engine'):
-            comando = f"docker exec {engine_name} /bin/sh -c 'mpirun --allow-run-as-root -np 2 ./jogoVidaMPI {powmin} {powmax}'"
-        elif(engine_name == 'c_engine'):
-            comando = f"docker exec {engine_name} /bin/sh -c './jogoVida {powmin} {powmax}'"
-        elif(engine_name == 'spark_engine'):
-            comando = f"docker exec {engine_name} /bin/sh -c 'python3 jogoVidaSpark.py {powmin} {powmax}'"
-        subprocess.run(comando, shell=True, check=True)
-        print(f"Parâmetros enviados para {engine_name}: POWMIN={powmin}, POWMAX={powmax}")
+        kubectl_command = [
+            "kubectl", "exec", pod_name, "--", "sh", "-c", command
+        ]
+        subprocess.run(kubectl_command, check=True)
+        print(f"Comando executado com sucesso no pod {pod_name}: {command}")
     except subprocess.CalledProcessError as e:
-        print(f"Erro ao enviar para a engine {engine_name}: {e}")
+        print(f"Erro ao executar comando no pod {pod_name}: {e}")
+
+def enviar_para_docker(engine_name, powmin, powmax):
+    if engine_name == 'mpi_engine':
+        comando = f"mpirun --allow-run-as-root -np 2 ./jogoVidaMPI {powmin} {powmax}"
+    elif engine_name == 'c_engine':
+        comando = f"./jogoVida {powmin} {powmax}"
+    elif engine_name == 'spark_engine':
+        comando = f"python jogoVidaSpark.py {powmin} {powmax}"
+    else:
+        print(f"Engine desconhecida: {engine_name}")
+        return
+
+    pod_name = f"{engine_name}-deployment-<pod_suffix>"  # Ajuste <pod_suffix> conforme necessário
+    executar_comando_no_pod(pod_name, comando)
 
 def handle_client(client_socket, address, client_sockets):
     print(f"Novo cliente conectado, IP: {address[0]}, Porta: {address[1]}")
