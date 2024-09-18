@@ -10,7 +10,7 @@ from datetime import datetime
 
 # Função para enviar dados para o Elasticsearch
 def enviar_dados_para_elasticsearch(data):
-    url = f'http://elasticsearch:9200/tempo_spark_engine/_doc/'
+    url = f'http://elasticsearch-service:9200/tempo_spark_engine/_doc/'
     headers = {'Content-Type': 'application/json'}
     response = requests.post(url, headers=headers, json=data)
     if response.status_code == 201:

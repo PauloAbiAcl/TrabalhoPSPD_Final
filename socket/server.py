@@ -4,6 +4,13 @@ import subprocess
 import requests
 import json
 from datetime import datetime
+import sys
+from kubernetes import client, config
+
+sys.stdout.reconfigure(line_buffering=True)
+
+# Carregar configuração dentro do pod Kubernetes
+config.load_incluster_config()
 
 SERVER_IP = "0.0.0.0"
 SERVER_PORT = 8080
@@ -23,6 +30,7 @@ def enviar_dados_para_elasticsearch(num_clientes):
     else:
         print(f"Erro ao enviar dados: {response.status_code} - {response.text}")
 
+
 def executar_comando_no_pod(pod_name, command):
     try:
         kubectl_command = [
@@ -33,22 +41,39 @@ def executar_comando_no_pod(pod_name, command):
     except subprocess.CalledProcessError as e:
         print(f"Erro ao executar comando no pod {pod_name}: {e}")
 
+def get_pod_name(label_selector, namespace="default"):
+    try:
+        kubectl_command = [
+            "kubectl", "get", "pods", "-l", f"{label_selector}", "-o", "jsonpath={.items[0].metadata.name}"
+        ]
+        pod_name = subprocess.check_output(kubectl_command).decode('utf-8').strip()
+        print(f"Nome do pod com label {label_selector}: {pod_name}")
+        return pod_name
+    except client.rest.ApiException as e:
+        print(f"Erro ao obter o nome do pod com label {label_selector}: {e}")
+        return None
+
 def enviar_para_docker(engine_name, powmin, powmax):
-    if engine_name == 'mpi_engine':
+    if engine_name == 'mpi-engine':
         comando = f"mpirun --allow-run-as-root -np 2 ./jogoVidaMPI {powmin} {powmax}"
-    elif engine_name == 'c_engine':
+    elif engine_name == 'c-engine':
         comando = f"./jogoVida {powmin} {powmax}"
-    elif engine_name == 'spark_engine':
+    elif engine_name == 'spark-engine':
         comando = f"python jogoVidaSpark.py {powmin} {powmax}"
     else:
         print(f"Engine desconhecida: {engine_name}")
         return
 
-    pod_name = f"{engine_name}-deployment-<pod_suffix>"  # Ajuste <pod_suffix> conforme necessário
-    executar_comando_no_pod(pod_name, comando)
+    # Buscar o nome do pod dinamicamente com base no label
+    pod_name = get_pod_name(f"app={engine_name}", "default")
+    if pod_name:
+        executar_comando_no_pod(pod_name, comando)
+    else:
+        print(f"Erro: não foi possível encontrar o pod para {engine_name}")
 
 def handle_client(client_socket, address, client_sockets):
     print(f"Novo cliente conectado, IP: {address[0]}, Porta: {address[1]}")
+    sys.stdout.flush()
     
     # Enviar número de clientes conectados ao Elasticsearch
     num_clientes = len([sock for sock in client_sockets if sock is not None])
@@ -71,9 +96,9 @@ def handle_client(client_socket, address, client_sockets):
                 print(f"Cliente {address[0]}:{address[1]} enviou: POWMIN={powmin}, POWMAX={powmax}")
                 
                 # Envia para as diferentes engines
-                enviar_para_docker('mpi_engine', powmin, powmax)
+                enviar_para_docker('mpi-engine', powmin, powmax)
                 # enviar_para_docker('c_engine', powmin, powmax)
-                enviar_para_docker('spark_engine', powmin, powmax)
+                enviar_para_docker('spark-engine', powmin, powmax)
             
             else:
                 print("Formato da mensagem inválido.")

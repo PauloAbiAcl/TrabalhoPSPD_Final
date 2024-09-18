@@ -8,7 +8,7 @@
 
 void enviar_dados_para_elasticsearch(const char* engine_name, int tam, double tempo_init, double tempo_comp, double tempo_fim, double tempo_total) {
     char curl_cmd[1024];
-    const char* elasticsearch_url = "http://elasticsearch:9200/tempo_mpi_engine/_doc/";
+    const char* elasticsearch_url = "elasticsearch-service:9200/tempo_mpi_engine/_doc/";
 
      // Obter o timestamp atual no formato ISO 8601
     time_t now = time(NULL);
