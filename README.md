@@ -97,4 +97,9 @@ Quando terminar de usar o Minikube, você pode desligar o cluster com:
 minikube stop
 ```
 
+## Vídeo Apresentação e Relatório
+
+- [Video da apresentação](https://youtu.be/_ipTsouHLg4) 
+- [Relatório Trabalho](./Relatorio_TF_PSPD.pdf)
+
 
