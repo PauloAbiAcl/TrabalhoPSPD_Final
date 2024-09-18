@@ -19,7 +19,7 @@ ENV OMPI_ALLOW_RUN_AS_ROOT=1
 ENV OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
 # Expor uma porta para comunicação (se necessário)
-EXPOSE 8080
+EXPOSE 8081
 
 # Manter o container em execução indefinidamente
 CMD ["tail", "-f", "/dev/null"]

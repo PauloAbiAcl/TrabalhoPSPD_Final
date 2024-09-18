@@ -13,11 +13,14 @@ def send_to_server(server_ip, server_port, message):
         client_socket.close()
 
 def main():
+    # Substitua pelos valores reais do IP e NodePort do serviço
+    server_ip = "192.168.49.2"  # IP do nó Kubernetes
+    server_port = 32720  # NodePort atribuído ao serviço
+
     while True:
         message = input("Digite a mensagem no formato <num1,num2>: ")
-
-        # Envia a mensagem para o server.py que está escutando na porta 8080
-        send_to_server("127.0.0.1", 8080, message)  # O server.py está escutando na porta 8080
+        # Envia a mensagem para o server.py que está escutando na porta especificada
+        send_to_server(server_ip, server_port, message)
 
 if __name__ == "__main__":
     main()
