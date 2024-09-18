@@ -23,7 +23,7 @@ services:
       dockerfile: Dockerfile
     container_name: spark_engine
     ports:
-      - "7071:7071"
+      - "7071:5000"
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.9.0

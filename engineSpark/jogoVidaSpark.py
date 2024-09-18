@@ -1,13 +1,13 @@
-from pyspark.sql import SparkSession
-import uuid
-import re
-import time
-from datetime import datetime
-import sys
-import requests
+import socket
+import threading
 import json
+from pyspark.sql import SparkSession
+import re
 from datetime import datetime
+import requests
+import sys
 
+sys.stdout.reconfigure(line_buffering=True)
 # Função para enviar dados para o Elasticsearch
 def enviar_dados_para_elasticsearch(data):
     url = f'http://elasticsearch:9200/tempo_spark_engine/_doc/'
@@ -53,18 +53,6 @@ def InitTabul(tam):
     tabulIn[3][3] = 1
     return tabulIn, tabulOut
 
-def DumpTabul(tabul, tam, first, last, msg):
-    for i in range(first, last + 1):
-        print("=", end="")
-    print()
-    for i in range(first, last + 1):
-        for j in range(first, last + 1):
-            print('X' if tabul[i][j] == 1 else '.', end='')
-        print('|')
-    for i in range(first, last + 1):
-        print("=", end="")
-    print()
-
 def UmaVida(tabulIn, tabulOut, tam):
     for i in range(1, tam + 1):
         for j in range(1, tam + 1):
@@ -93,36 +81,51 @@ def jogoVida(potencia):
         print(f"*Ok, RESULTADO CORRETO* - Potência: {potencia}")
     else:
         print(f"**Not Ok, RESULTADO ERRADO** - Potência: {potencia}")
-    # json = {"status": 1 if Correto(tabulIn, tam) else 0, "mode": "Spark", "time": delta_tempo.total_seconds(), "potency": potencia}
-    # print("ENVIANDO=", json)
-    json = {
+    json_data = {
         "time": delta_tempo.total_seconds(),
         "tamanho": tam,
         "engine_name": "spark_engine",
         "timestamp": datetime.now().isoformat() 
     }
-    enviar_dados_para_elasticsearch(json)
+    enviar_dados_para_elasticsearch(json_data)
 
-def main():
-    if len(sys.argv) != 3:
-        print("Uso: python3 jogodavida.py <num1> <num2>")
-        sys.exit(1)
-
+def handle_client_conncetion(client_socket):
     try:
-        num1 = int(sys.argv[1])
-        num2 = int(sys.argv[2])
-    except ValueError:
-        print("Por favor, forneça dois números inteiros.")
-        sys.exit(1)
+        request = client_socket.recv(1024).decode('utf-8')
+        print(f"Recebido: {request}")
+        
+        try:
+            data = json.loads(request)
+            num1 = int(data.get('powmin'))
+            num2 = int(data.get('powmax'))
 
-    spark = SparkSession.builder.master("local[6]").appName("GameOfLife").getOrCreate()
-    
-    potencias = list(range(num1, num2 + 1))
+            if not isinstance(num1, int) or not isinstance(num2, int):
+                client_socket.send("Os valores devem ser inteiros".encode('utf-8'))
+                return
 
-    potenciasrdd = spark.sparkContext.parallelize(potencias, len(potencias))
+            spark = SparkSession.builder.master("local[6]").appName("GameOfLife").getOrCreate()
+            potencias = list(range(num1, num2 + 1))
+            potenciasrdd = spark.sparkContext.parallelize(potencias, len(potencias))
+            potenciasrdd.map(lambda x: jogoVida(x)).collect()
+            spark.stop()
 
-    potenciasrdd.map(lambda x: jogoVida(x)).collect()
-    spark.stop()
+            client_socket.send("Processamento concluído com sucesso".encode('utf-8'))
+        except json.JSONDecodeError:
+            client_socket.send("Erro ao decodificar JSON".encode('utf-8'))
+    finally:
+        client_socket.close()
+
+def start_server(host='0.0.0.0', port=7071):
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((host, port))
+    server.listen(5)
+    print(f"Servidor ouvindo na porta {port}...")
+
+    while True:
+        client_socket, addr = server.accept()
+        print(f"Conexão recebida de {addr}")
+        client_handler = threading.Thread(target=handle_client_conncetion, args=(client_socket,))
+        client_handler.start()
 
 if __name__ == "__main__":
-    main()
+    start_server()

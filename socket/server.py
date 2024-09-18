@@ -4,8 +4,10 @@ import subprocess
 import requests
 import json
 from datetime import datetime
+import sys
 
-SERVER_IP = "127.0.0.1"
+sys.stdout.reconfigure(line_buffering=True)
+SERVER_IP = "0.0.0.0"
 SERVER_PORT = 8080
 BUFFER_SIZE = 1024
 
@@ -23,25 +25,26 @@ def enviar_dados_para_elasticsearch(num_clientes):
     else:
         print(f"Erro ao enviar dados: {response.status_code} - {response.text}")
 
-def enviar_para_docker(engine_name, powmin, powmax):
+def enviar_para_tcp(engine_name, port, powmin, powmax):
     try:
-        if(engine_name == 'mpi_engine'):
-            comando = f"docker exec {engine_name} /bin/sh -c 'mpirun --allow-run-as-root -np 2 ./jogoVidaMPI {powmin} {powmax}'"
-        elif(engine_name == 'c_engine'):
-            comando = f"docker exec {engine_name} /bin/sh -c './jogoVida {powmin} {powmax}'"
-        elif(engine_name == 'spark_engine'):
-            comando = f"docker exec {engine_name} /bin/sh -c 'python3 jogoVidaSpark.py {powmin} {powmax}'"
-        subprocess.run(comando, shell=True, check=True)
-        print(f"Parâmetros enviados para {engine_name}: POWMIN={powmin}, POWMAX={powmax}")
-    except subprocess.CalledProcessError as e:
-        print(f"Erro ao enviar para a engine {engine_name}: {e}")
+        # Conectar ao servidor TCP
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp_socket:
+            tcp_socket.connect((engine_name, port))
+            # Enviar os dados como JSON
+            request_data = json.dumps({"powmin": powmin, "powmax": powmax})
+            tcp_socket.sendall(request_data.encode('utf-8'))
+            # Receber a resposta
+            response = tcp_socket.recv(BUFFER_SIZE).decode('utf-8')
+            print(f"Resposta do servidor TCP: {response}")
+    except socket.error as e:
+        print(f"Erro ao enviar dados para a engine {engine_name}: {e}")
 
 def handle_client(client_socket, address, client_sockets):
     print(f"Novo cliente conectado, IP: {address[0]}, Porta: {address[1]}")
     
     # Enviar número de clientes conectados ao Elasticsearch
     num_clientes = len([sock for sock in client_sockets if sock is not None])
-    enviar_dados_para_elasticsearch(num_clientes)
+    # enviar_dados_para_elasticsearch(num_clientes)
     
     while True:
         try:
@@ -60,9 +63,9 @@ def handle_client(client_socket, address, client_sockets):
                 print(f"Cliente {address[0]}:{address[1]} enviou: POWMIN={powmin}, POWMAX={powmax}")
                 
                 # Envia para as diferentes engines
-                enviar_para_docker('mpi_engine', powmin, powmax)
+                enviar_para_tcp('mpi-engine-deployment', 8081, powmin, powmax)
                 # enviar_para_docker('c_engine', powmin, powmax)
-                enviar_para_docker('spark_engine', powmin, powmax)
+                enviar_para_tcp('spark-engine-deployment', 7071, powmin, powmax)
             
             else:
                 print("Formato da mensagem inválido.")
@@ -84,9 +87,10 @@ def handle_client(client_socket, address, client_sockets):
 
     # Enviar o número atualizado de clientes conectados
     num_clientes = len([sock for sock in client_sockets if sock is not None])
-    enviar_dados_para_elasticsearch(num_clientes)
+    # enviar_dados_para_elasticsearch(num_clientes)
 
 def main():
+    print("Teste")
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind((SERVER_IP, SERVER_PORT))

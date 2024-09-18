@@ -14,8 +14,8 @@ def send_to_server(server_ip, server_port, message):
 
 def main():
     # Substitua pelos valores reais do IP e NodePort do serviço
-    server_ip = "192.168.49.2"  # IP do nó Kubernetes
-    server_port = 30744  # NodePort atribuído ao serviço
+    server_ip = "127.0.0.1"  # IP do nó Kubernetes
+    server_port = 8080  # NodePort atribuído ao serviço
 
     while True:
         message = input("Digite a mensagem no formato <num1,num2>: ")

@@ -21,4 +21,4 @@ RUN chmod +x /app/jogoVidaSpark.py
 EXPOSE 7071
 
 # Manter o container em execução indefinidamente
-CMD ["tail", "-f", "/dev/null"]
+CMD ["python", "jogoVidaSpark.py"]
