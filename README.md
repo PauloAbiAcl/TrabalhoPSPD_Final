@@ -1,5 +1,18 @@
 # TrabalhoPSPD_Final
 
+## Descrição
+Este projeto implementa uma versão paralela e distribuída do famoso "Jogo da Vida" de Conway, com o objetivo de explorar o uso de diferentes tecnologias e frameworks para computação de alto desempenho e escalável. O foco principal é na aplicação de técnicas de paralelização e distribuição de carga de trabalho, utilizando bibliotecas e ferramentas como MPI, OpenMP, Spark, Kubernetes, Elasticsearch e Socket.
+
+## O Jogo da Vida
+O "Jogo da Vida" de Conway é um autômato celular que simula a evolução de um conjunto de células em uma grade bidimensional. Células podem estar vivas ou mortas, e a evolução de cada célula depende de um conjunto de regras simples baseadas nos estados dos vizinhos. Embora o conceito seja simples, simular o Jogo da Vida em grades grandes requer muita capacidade computacional, tornando-o um excelente exemplo para explorar computação paralela e distribuída.
+
+## Integrantes do grupo
+| Nome | Matrícula |
+|---|---|
+| Arthur de Melo | 190024950
+| Eliás Yousef   | 190027088
+| Erick Melo     | 190027355
+| Paulo Vítor    | 190047968
 
 ## Instruções de uso
 Este projeto é configurado para ser executado em um cluster local do Kubernetes utilizando o Minikube. Siga os passos abaixo para configurar e executar o projeto.
